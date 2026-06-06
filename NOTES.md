@@ -338,3 +338,68 @@ Transfer-Encoding: chunked
 #### `Content-Type: application/json`
 
 By default, .NET core will serialize the response into json format.
+
+### Implementing a GET BY ID endpoint
+
+Route Parameters and Guid Type in ASP.NET
+One-liner: The name in curly braces is a placeholder you choose, and Guid is a data type for long unique IDs.
+
+Key points:
+- `{id}` in the URL pattern must match the parameter name in the method, exactly by name.
+- `Guid` is a 128-bit unique identifier, commonly used as a database primary key.
+- `ASP.NET` parses the URL value into the type you declare. Wrong format means no match.
+- You can use other types too, like int or string, depending on your ID format.
+
+Source/context:
+User's code or question snippet:
+```csharp
+app.MapGet("games/{id}", (Guid id) => games.Find(game => game.Id == id));
+
+// Renaming the parameter - both sides must match
+app.MapGet("games/{gameId}", (Guid gameId) => games.Find(game => game.Id == gameId));
+```
+
+#### Test the endpoints in `gamestore.http`
+To test the API in `gamestore.http`, each endpoint needs to be separated by `###` so that I can see `Send Request`:
+```
+GET http://localhost:5065/games
+
+###
+GET http://localhost:5065/games/3b5eea7e-1888-41c6-b2be-288c3d886cd3
+```
+
+After running up the app using `dotnet run`, I can send request to the get all endpoint to see the GUID of games from that session and then send another request to the get id endpoint using those temporary GUID.
+
+#### What if the specific game doesn't exist
+
+So update the `// GET /games/{id}` in `Program.cs`:
+```csharp
+// old
+app.MapGet("games/{id}", (Guid id) => games.Find(game => game.Id == id));
+
+// new
+app.MapGet("games/{id}", (Guid id) =>
+{
+    Game? game = games.Find(game => game.Id == id);
+    return game is null ? Results.NotFound() : Results.Ok(game);
+});
+```
+
+Note:
+- `Results.NotFound()`: `Results` has well known status codes for REST APIs to use.
+- `Results.Ok(game)`: I can't just return `game` which is of `Game` type, but I'm combining the results. So, use `Results.Ok(game)`.
+
+#### Test the get id endpoint
+
+Give it a non-existing id, then it responds as the below:
+```
+HTTP/1.1 404 Not Found
+Content-Length: 0
+Connection: close
+Date: Sat, 06 Jun 2026 02:15:11 GMT
+Server: Kestrel
+
+```
+
+Not confusing status code 200 with a null body ;)
+

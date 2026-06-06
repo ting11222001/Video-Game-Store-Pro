@@ -1,1 +1,4 @@
 GET http://localhost:5065/games
+
+###
+GET http://localhost:5065/games/30f68314-6381-44e0-b018-23d3841718b4
