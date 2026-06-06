@@ -502,3 +502,226 @@ Results.CreatedAtRoute(
     game
 );
 ```
+
+### Adding Server-Side Validation
+
+If I only sent this at POST:
+```
+###
+POST http://localhost:5065/games
+Content-Type: application/json
+
+{
+    "genre": "Kids and Family",
+    "price": 19.99,
+    "releaseDate": "2011-11-18"
+}
+```
+
+It will print this as the body is missing the `name` property:
+```
+HTTP/1.1 400 Bad Request
+Connection: close
+Content-Type: text/plain; charset=utf-8
+Date: Sat, 06 Jun 2026 03:39:43 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "Game game" from the request body as JSON.
+```
+
+This is as expected but the response is not ideal.
+
+Then, if I sent this which makes the `name` property as an empty string:
+```
+###
+POST http://localhost:5065/games
+Content-Type: application/json
+
+{
+    "name": "",
+    "genre": "Kids and Family",
+    "price": 19.99,
+    "releaseDate": "2011-11-18"
+}
+```
+
+It prints this which is bad as it's still giving us `201`:
+```
+HTTP/1.1 201 Created
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Sat, 06 Jun 2026 03:41:28 GMT
+Server: Kestrel
+Location: http://localhost:5065/games/8d1b1b80-c2a3-4c1f-8a4a-059f7f9d0572
+Transfer-Encoding: chunked
+
+{
+  "id": "8d1b1b80-c2a3-4c1f-8a4a-059f7f9d0572",
+  "name": "",
+  "genre": "Kids and Family",
+  "price": 19.99,
+  "releaseDate": "2011-11-18"
+}
+```
+
+#### First fix
+
+In `Program.cs` I can do this:
+```csharp
+// POST /games
+app.MapPost("/games", (Game game) =>
+{
+    if (string.IsNullOrEmpty(game.Name))
+    {
+        return Results.BadRequest("Game name is required.");
+    }
+    
+    game.Id = Guid.NewGuid();
+    games.Add(game);
+    return Results.CreatedAtRoute(
+        GetGameEndpointName,
+        new { id = game.Id },
+        game
+    );
+});
+
+```
+
+This give me:
+```
+HTTP/1.1 400 Bad Request
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Sat, 06 Jun 2026 03:45:15 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+"Game name is required."
+```
+
+But this means I will need to validate each property of the sent object myself.
+
+#### Use Data Annotation in `Game.cs` instead
+
+Add `[Required]`:
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+namespace GameStore.Api.Models;
+
+public class Game
+{
+    public Guid Id { get; set; }
+
+    [Required]
+    public required string Name { get; set; }
+
+    public required string Genre { get; set; }
+    public decimal Price { get; set; }
+
+    public DateOnly ReleaseDate { get; set; }
+}
+```
+
+So no object with an empty `Name` can come into my API.
+
+But this is not enough as it's still printing:
+```
+HTTP/1.1 201 Created
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Sat, 06 Jun 2026 03:49:57 GMT
+Server: Kestrel
+Location: http://localhost:5065/games/cd048f08-1f57-49a7-b982-71f36b70c585
+Transfer-Encoding: chunked
+
+{
+  "id": "cd048f08-1f57-49a7-b982-71f36b70c585",
+  "name": "",
+  "genre": "Kids and Family",
+  "price": 19.99,
+  "releaseDate": "2011-11-18"
+}
+```
+
+Turns out - I'm using minimal Web API and it doesn't have much under the hood so it won't enforce the data annotations.
+
+I need to one extra thing called `endpoint filter`.
+- This endpoint filter mechanism will help enforce those data annotations before letting the request get into my endpoints.
+- I can use a library so I don't need to write this endpoint filter manually. It's on NuGet [here](https://nuget.org/).
+
+Search `minimalapis.extensions`. Find `MinimalApis.Extensions`. Install by:
+```
+dotnet add package MinimalApis.Extensions --version 0.11.0
+```
+
+Make sure the terminal is at `GameStore.Api` which is where the `.csproj` file is at.
+
+In terminal:
+```bash
+Backend/src/GameStore.Api (main)
+$ dotnet add package MinimalApis.Extensions --version 0.11.0
+  Determining projects to restore...
+  Writing C:\Users\Li-Ting\AppData\Local\Temp\tmp1fk1bz.tmp
+info : X.509 certificate chain validation will use the default trust store selected by .NET for code signing.
+...
+```
+
+Then, double check in `.csproj` to see this newly added package reference:
+```
+ <ItemGroup>
+    <PackageReference Include="MinimalApis.Extensions" Version="0.11.0" />
+  </ItemGroup>
+```
+
+So now I can add this `WithParameterValidation`, so that the data annotations in the data model `Game.cs` will be checked before allowing any requests to actually jump into my endpoints:
+```csharp
+// POST /games
+app.MapPost("/games", (Game game) =>
+{
+    game.Id = Guid.NewGuid();
+    games.Add(game);
+    return Results.CreatedAtRoute(
+        GetGameEndpointName,
+        new { id = game.Id },
+        game
+    );
+})
+.WithParameterValidation();
+```
+
+Now, test the endpoint again:
+```
+###
+POST http://localhost:5065/games
+Content-Type: application/json
+
+{
+    "name": "",
+    "genre": "Kids and Family",
+    "price": 19.99,
+    "releaseDate": "2011-11-18"
+}
+```
+
+It will print this well-formed problem json object instead of just exception trace:
+```
+HTTP/1.1 400 Bad Request
+Connection: close
+Content-Type: application/problem+json
+Date: Sat, 06 Jun 2026 04:08:51 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "One or more validation errors occurred.",
+  "status": 400,
+  "errors": {
+    "Name": [
+      "The Name field is required."
+    ]
+  }
+}
+```

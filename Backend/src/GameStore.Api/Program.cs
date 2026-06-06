@@ -53,6 +53,7 @@ app.MapPost("/games", (Game game) =>
         new { id = game.Id },
         game
     );
-});
+})
+.WithParameterValidation();
 
 app.Run();
