@@ -822,3 +822,64 @@ Connection: close
 Date: Sat, 06 Jun 2026 09:58:14 GMT
 Server: Kestrel
 ```
+
+### Implementing the DELETE endpoint
+
+Add this in `Program.cs`:
+```csharp
+// DELETE /games/{id}
+app.MapDelete("/games/{id}", (Guid id) =>
+{
+    games.RemoveAll(game => game.Id == id);
+    return Results.NoContent();
+});
+```
+
+Test by deleting the Minecraft game:
+```
+###
+DELETE http://localhost:5065/games/583a7003-1113-4877-8a68-24f15ea233df
+```
+
+It prints this as expected:
+```
+HTTP/1.1 204 No Content
+Connection: close
+Date: Sat, 06 Jun 2026 10:03:45 GMT
+Server: Kestrel
+
+```
+
+Also, double check with the Get All request that the Minecraft game was gone:
+```
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Sat, 06 Jun 2026 10:04:00 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+[
+  {
+    "id": "6bb607c2-17e2-4657-bd01-ad8dfd3457cc",
+    "name": "Street Fighter II",
+    "genre": "Fighting",
+    "price": 19.99,
+    "releaseDate": "1992-07-15"
+  },
+  {
+    "id": "30a8703d-40a0-4c87-bada-c57d17a38903",
+    "name": "Final Fantasy XIV",
+    "genre": "Roleplaying",
+    "price": 59.99,
+    "releaseDate": "2010-09-30"
+  },
+  {
+    "id": "0640fbe5-5efb-4444-be9a-d23ce3022e43",
+    "name": "FIFA 23",
+    "genre": "Sports",
+    "price": 69.99,
+    "releaseDate": "2022-09-27"
+  }
+]
+```
