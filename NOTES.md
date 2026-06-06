@@ -121,3 +121,156 @@ app.MapGet("/", () => "Hello World!");
   - This allows developers to configure and test their applications locally with specific URLs, including setting different ports or even hostnames if needed, directly from their development environment without altering the application's code. 
 
 ## Building a REST API with ASP.NET Core
+
+### What is a REST API?
+
+Acronym breakdown:
+- REpresentational
+- State
+- Transfer
+
+The 6 principles:
+- Stateless
+- Client-Server
+- Uniform interface
+- Layered system
+- Cacheable
+- Code on demand
+
+A set of guiding principles that impose conditions on how an API should work.
+
+So the client (e.g. the apps on our device) can reach and interact with the data on the server computer in the internet cloud.
+
+### Interacting with REST APIs
+
+How to Identify Resources in a REST API?
+
+A resource is any object, document or thing that the API can receive from or send to clients.
+
+A URL has three parts:
+```
+Protocol > Domain > Resource
+```
+
+The full URL is called a Uniform Resource Identifier (URI):
+```
+http://example.com/games
+```
+
+Other examples of resources: songs, users, posts, etc.
+
+My project's Games REST API will be doing:
+```
+GET /games
+GET /games/1
+POST /games
+PUT /games/1
+DELETE /games/1
+```
+
+### Adding the data model
+
+In `Game.cs` add these properties:
+```csharp
+using System;
+
+namespace GameStore.Api.Models;
+
+public class Game
+{
+    public Guid Id { get; set; }
+
+    public required string Name { get; set; }
+
+    public required string Genre { get; set; }
+    public decimal Price { get; set; }
+
+    public DateOnly ReleaseDate { get; set; }
+}
+
+```
+
+#### `GUID` type
+
+Set `GUID` type to give me unique identifiers without having to have a central coordinateor like a database to assign ids for me. This way in the future if I have a distributed system then each node doesn't have to talk to an external service first and just generate the unique identifier on its own. 
+
+It's also for security - no malicious users can get what is the next number we're assigning to new resources, or what resources are actually available in my API.
+
+It does take more space than an integer to store.
+
+#### `decimal` type
+
+Either float or double are based on a binary floating point arthmetic, which could introduce a tiny inaccuracies due to how decimal numbers are represented in binary format.
+
+But decimal type is using fixed point type, and it's designed for finance and currency calculations, so overall it's just more accurate for `Price` related properties.
+
+#### Test with in-memory games list
+
+In `Program.cs`:
+```csharp
+using GameStore.Api.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+
+List<Game> games = [
+    new Game
+    {
+        Id = Guid.NewGuid(),
+        Name = "Street Fighter II",
+        Genre = "Fighting",
+        Price = 19.99m,
+        ReleaseDate = new DateOnly(1992, 7, 15)
+    },
+    new Game
+    {
+        Id = Guid.NewGuid(),
+        Name = "Final Fantasy XIV",
+        Genre = "Roleplaying",
+        Price = 59.99m,
+        ReleaseDate = new DateOnly(2010, 9, 30)
+    },
+    new Game
+    {
+        Id = Guid.NewGuid(),
+        Name = "FIFA 23",
+        Genre = "Sports",
+        Price = 69.99m,
+        ReleaseDate = new DateOnly(2022, 9, 27)
+    }
+];
+
+app.MapGet("/", () => "Hello World!");
+
+app.Run();
+```
+
+#### Extension version issues
+
+##### Re-installed C# Dev Kit to an older version
+
+In `Video-Game-Store-Pro/Backend/src/GameStore.Api/Models`:
+```csharp
+dotnet new class -n Game
+```
+
+Turn out this way of creating the new class file doesn't give me the right namespace.
+
+It should be:
+```
+namespace GameStore.Api.Models;
+```
+
+But somehow the CLI approach only gives me this which is not matching the file structure I have `Backend/src/GameStore.Api/Models`:
+```
+namespace GameStore.Api;
+```
+
+To avoid manually updating namespace myself in the future, I ended up reinstall the C# Dev Kit to the older version to be able to see Solution Explorer which will be the same as the tutorial (the latest version had changed it to C# Project Details).
+
+Also, the `prop` this code hint didn't give me:
+```
+prop  →  public int MyProperty { get; set; }
+```
+
+So I ended up reinstalling to the old version `1.11.14`
