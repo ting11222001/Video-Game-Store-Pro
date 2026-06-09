@@ -1411,3 +1411,27 @@ public record UpdateGameDto(
     [Required][StringLength(500)] string Description
 );
 ```
+
+### Knowledge check
+
+#### In a REST API, what is the primary purpose of using a Data Transfer Object (DTO)?
+
+A Data Transfer Object (DTO) serves as a contract in a REST API by defining the expected structure and content of data exchanged between the client and the server. 
+
+This contract ensures consistency and compatibility, even if the underlying database models change. By using DTOs, the API can adapt to changes in database structure without breaking the client, as only the DTO structure (the "contract") remains consistent in client-server communication. 
+
+This approach helps maintain a stable interface for clients, enhancing the API’s reliability and flexibility.
+
+#### Why are record types preferred for defining DTOs in .NET applications?
+
+Record types in .NET are preferred for defining DTOs because they are immutable by default. Once their properties are set, usually at the time of creation, they cannot be changed. 
+
+This immutability is perfect for DTOs as they are meant to carry data from one point to another without the need for modification, ensuring data consistency and integrity as it moves across different layers of an application or between applications.
+
+#### When implementing a POST /games endpoint, why should a GameDetailsDto be returned in the 201 Created response instead of the Game model?
+
+Returning a GameDetailsDto in the response instead of the Game model helps prevent exposing the internal structure and potentially sensitive details of the Game object to the client. 
+
+The DTO only includes the data necessary for the client, ensuring that implementation details or any fields that should remain private are not inadvertently exposed.
+
+## Vertical Slice Architecture
