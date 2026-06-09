@@ -1175,6 +1175,7 @@ app.MapPost("/games", (CreateGameDto gameDto) =>
         return Results.BadRequest("Invalid genre ID.");
     }
 
+    // Saving the data into database
     Game game = new Game
     {
         Id = Guid.NewGuid(),
@@ -1189,7 +1190,7 @@ app.MapPost("/games", (CreateGameDto gameDto) =>
     return Results.CreatedAtRoute(
         GetGameEndpointName,
         new { id = game.Id },
-        new GameDetailsDto(
+        new GameDetailsDto( // return back to client so only need to return back GenreId, not the whole Genre obj
             game.Id,
             game.Name,
             game.Genre.Id,
@@ -1204,6 +1205,19 @@ app.MapPost("/games", (CreateGameDto gameDto) =>
 
 Test it - take an existing GenreId and paste it into the POST endpoint:
 ```
+Old:
+###
+POST http://localhost:5065/games
+Content-Type: application/json
+
+{
+    "name": "Minecraft",
+    "genre": "Kids and Family",
+    "price": 19.99,
+    "releaseDate": "2011-11-18"
+}
+
+New:
 ###
 POST http://localhost:5065/games
 Content-Type: application/json
@@ -1263,4 +1277,137 @@ Transfer-Encoding: chunked
     "releaseDate": "2011-11-18"
   }
 ]
+```
+
+### Using DTOs with PUT requests 
+
+#### Test
+
+Before changing the first game it was like this in the Get All endpoint:
+```
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Tue, 09 Jun 2026 01:04:00 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+[
+  {
+    "id": "fd9162bb-7231-43d4-903b-733fd2773e27",
+    "name": "Street Fighter II",
+    "genre": "Fighting",
+    "price": 19.99,
+    "releaseDate": "1992-07-15"
+  },
+  ...
+]
+```
+
+Get a genre id that I have:
+```
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Tue, 09 Jun 2026 01:06:25 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+[
+  {
+    "id": "d8a77400-e414-4e5a-a695-c3ec90ce6177",
+    "name": "Fighting"
+  },
+  ...
+]
+```
+
+Replace with the correct game id and genre id:
+```
+Old:
+###
+PUT http://localhost:5065/games/ff9f5f37-b80e-49ce-b484-f5154dcaabc4
+Content-Type: application/json
+
+{
+    "name": "Street Fighter II Turbo",
+    "genre": "Fighting",
+    "price": 9.99,
+    "releaseDate": "1992-07-15"
+}
+
+New:
+###
+PUT http://localhost:5065/games/fd9162bb-7231-43d4-903b-733fd2773e27
+Content-Type: application/json
+
+{
+    "name": "Street Fighter II Turbo",
+    "genreId": "d8a77400-e414-4e5a-a695-c3ec90ce6177",
+    "price": 9.99,
+    "releaseDate": "1992-07-15",
+    "description": "The most iconic fighting game of all time!"
+}
+```
+
+After running PUT endpoint, it shows updated successfully:
+```
+HTTP/1.1 204 No Content
+Connection: close
+Date: Tue, 09 Jun 2026 01:05:03 GMT
+Server: Kestrel
+
+```
+
+Then, check again with get all endpoint again. I can see it's updated correctly with the correct genre and name:
+```
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Tue, 09 Jun 2026 01:05:28 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+[
+  {
+    "id": "fd9162bb-7231-43d4-903b-733fd2773e27",
+    "name": "Street Fighter II Turbo",
+    "genre": "Fighting",
+    "price": 9.99,
+    "releaseDate": "1992-07-15"
+  },
+  ...
+]
+```
+
+Finally, as we now we use DTO to define the inputs into our endpoints, I can remove those data annotations from my Models, just keep those rules on DTOs.
+
+Cleaned `Game` Models:
+```csharp
+namespace GameStore.Api.Models;
+
+public class Game
+{
+    public Guid Id { get; set; }
+    public required string Name { get; set; }
+
+    public required Genre Genre { get; set; }
+
+    public decimal Price { get; set; }
+
+    public DateOnly ReleaseDate { get; set; }
+
+    public required string Description { get; set; }
+}
+```
+
+Now just rely on the Dtos and the rules there. For example:
+```csharp
+public record UpdateGameDto(
+    [Required][StringLength(50)] string Name,
+    Guid GenreId,
+    [Range(1, 100, ErrorMessage = "Price must be between 1 and 100.")] decimal Price,
+    DateOnly ReleaseDate,
+    [Required][StringLength(500)] string Description
+);
 ```

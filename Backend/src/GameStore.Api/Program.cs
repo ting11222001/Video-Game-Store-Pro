@@ -114,7 +114,7 @@ app.MapPost("/games", (CreateGameDto gameDto) =>
 .WithParameterValidation();
 
 // PUT /games/{id}
-app.MapPut("/games/{id}", (Guid id, Game updatedGame) =>
+app.MapPut("/games/{id}", (Guid id, UpdateGameDto gameDto) =>
 {
     Game? existingGame = games.Find(game => game.Id == id);
     if (existingGame is null)
@@ -122,10 +122,18 @@ app.MapPut("/games/{id}", (Guid id, Game updatedGame) =>
         return Results.NotFound();
     }
 
-    existingGame.Name = updatedGame.Name;
-    existingGame.Genre = updatedGame.Genre;
-    existingGame.Price = updatedGame.Price;
-    existingGame.ReleaseDate = updatedGame.ReleaseDate;
+    Genre? genre = genres.Find(genre => genre.Id == gameDto.GenreId);
+
+    if (genre is null)
+    {
+        return Results.BadRequest("Invalid genre ID.");
+    }
+
+    existingGame.Name = gameDto.Name;
+    existingGame.Genre = genre;
+    existingGame.Price = gameDto.Price;
+    existingGame.ReleaseDate = gameDto.ReleaseDate;
+    existingGame.Description = gameDto.Description;
 
     return Results.NoContent();
 })
@@ -163,7 +171,17 @@ public record GameSummaryDto(
     DateOnly ReleaseDate
 );
 
+// DTO for creating a new game, which includes GenreId instead of the full Genre object
 public record CreateGameDto(
+    [Required][StringLength(50)] string Name,
+    Guid GenreId,
+    [Range(1, 100, ErrorMessage = "Price must be between 1 and 100.")] decimal Price,
+    DateOnly ReleaseDate,
+    [Required][StringLength(500)] string Description
+);
+
+// DTO for updating an existing game, which also includes GenreId instead of the full Genre object
+public record UpdateGameDto(
     [Required][StringLength(50)] string Name,
     Guid GenreId,
     [Range(1, 100, ErrorMessage = "Price must be between 1 and 100.")] decimal Price,

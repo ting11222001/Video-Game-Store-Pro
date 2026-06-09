@@ -16,14 +16,15 @@ Content-Type: application/json
 }
 
 ###
-PUT http://localhost:5065/games/ff9f5f37-b80e-49ce-b484-f5154dcaabc4
+PUT http://localhost:5065/games/fd9162bb-7231-43d4-903b-733fd2773e27
 Content-Type: application/json
 
 {
     "name": "Street Fighter II Turbo",
-    "genre": "Fighting",
+    "genreId": "d8a77400-e414-4e5a-a695-c3ec90ce6177",
     "price": 9.99,
-    "releaseDate": "1992-07-15"
+    "releaseDate": "1992-07-15",
+    "description": "The most iconic fighting game of all time!"
 }
 
 ###
