@@ -1770,4 +1770,53 @@ But not everything in a program is a "thing". Some code is just behaviour. Exten
 
 So C# gives you static as an escape hatch. It says "this is just a function that lives inside a class for organisation, not a blueprint for objects."
 
+#### Used `Record` class for DTOs
+
+A `record` is a shorthand C# type that is immutable, easy to compare, and ideal for carrying data between layers.
+
+Key points:
+
+- Immutable by default. Data cannot be changed after creation.
+- Less boilerplate. One line replaces many lines of a class.
+- Value equality built in. Two records with the same data are considered equal.
+- Plays nicely with ASP.NET Core's JSON serialiser.
+
+For example:
+```csharp
+// Record DTO (positional syntax)
+public record UserDto(int Id, string Name);
+
+// Regular class equivalent (much more code)
+public class UserDto
+{
+    public int Id { get; init; }
+    public string Name { get; init; }
+
+    public UserDto(int id, string name)
+    {
+        Id = id;
+        Name = name;
+    }
+}
+```
+
+
 ### Adding the final slices
+
+Add update a game and delete a game slices. Also, get all genres slice.
+
+#### Nested Record Types and Endpoint Parameter Binding
+
+You pass the inner record `CreateGameDto` because that is the actual data shape, and the outer `CreateGameDtos` is just a container for organising it.
+
+`CreateGameDtos` is the outer container. `CreateGameDto` is the actual shape of the data you want to receive.
+
+Think of it like a box (`CreateGameDtos`) that holds a form (`CreateGameDto`). When someone submits data to your endpoint, you want the filled-in form, not the whole box.
+
+```csharp
+public record class CreateGameDtos       // <-- the box (outer container)
+{
+    public record CreateGameDto(...)     // <-- the form inside the box (the actual data shape)
+    { ... }
+}
+```
