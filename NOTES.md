@@ -1638,8 +1638,8 @@ Create `Features/Games/GetGames` folder.
 
 Each feature is one folder. E.g. one for retrieving the full list of games.
 
-- `GetGamesDto`: this holds all the related DTOs of this feature.
-- `GetGamesEndpoint`: this holds all the related endpoints.
+- `GetGamesDto`: this holds all the related DTOs of this feature. Moved from `Program.cs`.
+- `GetGamesEndpoint`: this holds all the related endpoints. Moved from `Program.cs`.
 
 
 #### Why making `GetGamesEndpoint` static
@@ -1695,3 +1695,79 @@ public static class StringExtensions
 ```
 
 Now `name.Shout()` works. You did not touch Microsoft's `string` class at all.
+
+### Adding the next slices
+
+A feature to get a game by id and another feature to create a brand new game.
+
+Create `Constants/EndpointName`:
+```csharp
+public static class EndpointName
+{
+    public const string GetGame = nameof(GetGame); // so I don't need to have a hardcoded string here
+}
+```
+
+#### Why using a `static` class to store the constant values
+
+Think of a regular class like a cookie cutter. You use it to make individual cookies (objects). Each cookie is separate.
+
+A static class is different. It is not a cookie cutter. It is more like a notice board. The notice board exists on its own. You do not make copies of it. You just walk up to it and read what is there.
+
+Because `EndpointName` is `static`, you refer to it directly by its name, like reading a sign on a wall:
+```csharp
+EndpointName.GetGame
+// "Go to the EndpointName notice board. Read the GetGame sign."
+```
+
+The `const` or `static` keyword on the values inside also means they belong to the class itself, not to any object.
+
+#### When to use `static`
+
+Ask yourself: does this need "state"?
+
+`State` means data stored inside an object that can change over time. For example:
+
+```csharp
+public class Counter
+{
+    private int _count = 0; // this is state
+
+    public void Increment() => _count++;
+    public int GetCount() => _count;
+}
+```
+
+Each `Counter` instance has its own `_count`. You need to instantiate it because each one is independent.
+
+When to use `static`?
+
+Use `static` when the method or class is just a function. It takes input, does work, returns output. No stored data needed.
+
+```csharp
+public static class MathHelper
+{
+    public static int Add(int a, int b) => a + b;
+}
+```
+
+`Add` doesn't need to remember anything between calls. No reason to create an object.
+
+Your `GetGameEndpoint` is the same idea. It's just wiring up a route. No data stored inside it. So `static` makes sense.
+
+So:
+- When Needs to store and manage its own data: Instance (non-static)
+- When Needs to be injected as a dependency: Instance (non-static)
+- Just doing a job, no memory needed: static
+- Shared utility or helper functions: static
+
+
+Why does OOP work this way?
+
+OOP was designed around modelling real world things that have identity and state. A BankAccount has a balance. A User has a name. These make sense as objects.
+
+But not everything in a program is a "thing". Some code is just behaviour. Extension methods, helpers, and mappers are behaviour. Forcing them into objects with state would be artificial.
+
+So C# gives you static as an escape hatch. It says "this is just a function that lives inside a class for organisation, not a blueprint for objects."
+
+### Adding the final slices
