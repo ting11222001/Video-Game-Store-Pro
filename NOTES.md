@@ -113,23 +113,25 @@ app.MapGet("/", () => "Hello World!");
 ### Knowledge check for this section
 
 - What is ASP.NET Core? It's a web development framework for building web apps on the .NET platform.
-- What does the WebApplication class encapsulate in ASP.NET Core projects? All app's resources including an HTTP server, middleware components, logging, DI services, and configuration. 
-  - The WebApplication acts as a host that encapsulates all essential resources for the application. 
+- What does the WebApplication class encapsulate in ASP.NET Core projects? All app's resources including an HTTP server, middleware components, logging, DI services, and configuration.
+  - The WebApplication acts as a host that encapsulates all essential resources for the application.
   - This includes not only middleware components and logging but also an HTTP server implementation, dependency injection (DI) services, and configuration settings, making it a comprehensive setup for an ASP.NET Core project.
 - In ASP.NET Core projects, where is the application URL for local development specified?
   - In the launchSettings.json file under the "applicationUrl" setting for each profile.
-  - This allows developers to configure and test their applications locally with specific URLs, including setting different ports or even hostnames if needed, directly from their development environment without altering the application's code. 
+  - This allows developers to configure and test their applications locally with specific URLs, including setting different ports or even hostnames if needed, directly from their development environment without altering the application's code.
 
 ## Building a REST API with ASP.NET Core
 
 ### What is a REST API?
 
 Acronym breakdown:
+
 - REpresentational
 - State
 - Transfer
 
 The 6 principles:
+
 - Stateless
 - Client-Server
 - Uniform interface
@@ -148,11 +150,13 @@ How to Identify Resources in a REST API?
 A resource is any object, document or thing that the API can receive from or send to clients.
 
 A URL has three parts:
+
 ```
 Protocol > Domain > Resource
 ```
 
 The full URL is called a Uniform Resource Identifier (URI):
+
 ```
 http://example.com/games
 ```
@@ -160,6 +164,7 @@ http://example.com/games
 Other examples of resources: songs, users, posts, etc.
 
 My project's Games REST API will be doing:
+
 ```
 GET /games
 GET /games/1
@@ -171,6 +176,7 @@ DELETE /games/1
 ### Adding the data model
 
 In `Game.cs` add these properties:
+
 ```csharp
 using System;
 
@@ -192,7 +198,7 @@ public class Game
 
 #### `GUID` type
 
-Set `GUID` type to give me unique identifiers without having to have a central coordinateor like a database to assign ids for me. This way in the future if I have a distributed system then each node doesn't have to talk to an external service first and just generate the unique identifier on its own. 
+Set `GUID` type to give me unique identifiers without having to have a central coordinateor like a database to assign ids for me. This way in the future if I have a distributed system then each node doesn't have to talk to an external service first and just generate the unique identifier on its own.
 
 It's also for security - no malicious users can get what is the next number we're assigning to new resources, or what resources are actually available in my API.
 
@@ -207,6 +213,7 @@ But decimal type is using fixed point type, and it's designed for finance and cu
 #### Test with in-memory games list
 
 In `Program.cs`, note that I'm using `m` to make sure the program is getting the numbers as decimals:
+
 ```csharp
 using GameStore.Api.Models;
 
@@ -250,6 +257,7 @@ app.Run();
 ##### Re-installed C# Dev Kit to an older version
 
 In `Video-Game-Store-Pro/Backend/src/GameStore.Api/Models`:
+
 ```csharp
 dotnet new class -n Game
 ```
@@ -257,11 +265,13 @@ dotnet new class -n Game
 Turn out this way of creating the new class file doesn't give me the right namespace.
 
 It should be:
+
 ```
 namespace GameStore.Api.Models;
 ```
 
 But somehow the CLI approach only gives me this which is not matching the file structure I have `Backend/src/GameStore.Api/Models`:
+
 ```
 namespace GameStore.Api;
 ```
@@ -269,6 +279,7 @@ namespace GameStore.Api;
 To avoid manually updating namespace myself in the future, I ended up reinstall the C# Dev Kit to the older version to be able to see Solution Explorer which will be the same as the tutorial (the latest version had changed it to C# Project Details).
 
 Also, the `prop` this code hint didn't give me:
+
 ```
 prop  →  public int MyProperty { get; set; }
 ```
@@ -286,22 +297,26 @@ app.Run();
 On `MapGet`, use `ctrl + space`, it will give a list of methods like `MapDelete`, etc.
 
 This is saying when the pattern is matched `/games`, then what should be done:
+
 ```csharp
 app.MapGet("/games", () => games);
 ```
 
 To test, go to `gamestore.http` and do:
+
 ```
 GET http://localhost:5065/games
 ```
 
 In terminal:
+
 ```bash
 cd Backend/src/GameStore.Api
 dotnet run
 ```
 
 Then click `Send Request`, REST client will open a window to the right and show these games:
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -346,6 +361,7 @@ By default, .NET core will serialize the response into json format.
 One-liner: The name in curly braces is a placeholder you choose, and Guid is a data type for long unique IDs.
 
 Key points:
+
 - `{id}` in the URL pattern must match the parameter name in the method, exactly by name.
 - `Guid` is a 128-bit unique identifier, commonly used as a database primary key.
 - `ASP.NET` parses the URL value into the type you declare. Wrong format means no match.
@@ -353,6 +369,7 @@ Key points:
 
 Source/context:
 User's code or question snippet:
+
 ```csharp
 app.MapGet("games/{id}", (Guid id) => games.Find(game => game.Id == id));
 
@@ -361,7 +378,9 @@ app.MapGet("games/{gameId}", (Guid gameId) => games.Find(game => game.Id == game
 ```
 
 #### Test the endpoints in `gamestore.http`
+
 To test the API in `gamestore.http`, each endpoint needs to be separated by `###` so that I can see `Send Request`:
+
 ```
 GET http://localhost:5065/games
 
@@ -374,6 +393,7 @@ After running up the app using `dotnet run`, I can send request to the get all e
 #### What if the specific game doesn't exist
 
 So update the `// GET /games/{id}` in `Program.cs`:
+
 ```csharp
 // old
 app.MapGet("games/{id}", (Guid id) => games.Find(game => game.Id == id));
@@ -387,12 +407,14 @@ app.MapGet("games/{id}", (Guid id) =>
 ```
 
 Note:
+
 - `Results.NotFound()`: `Results` has well known status codes for REST APIs to use.
 - `Results.Ok(game)`: I can't just return `game` which is of `Game` type, but I'm combining the results. So, use `Results.Ok(game)`.
 
 #### Test the get id endpoint
 
 Give it a non-existing id, then it responds as the below:
+
 ```
 HTTP/1.1 404 Not Found
 Content-Length: 0
@@ -413,6 +435,7 @@ For the post endpoint, I want to receive the whole body of the `game` I'm creati
 We want to return the route to the created `game`.
 
 So instead of writing this:
+
 ```csharp
 // POST /games
 app.MapPost("/games", (Game game) =>
@@ -424,6 +447,7 @@ app.MapPost("/games", (Game game) =>
 ```
 
 We write:
+
 ```csharp
 const string GetGameEndpointeName = "GetGame";
 
@@ -445,6 +469,7 @@ app.MapPost("/games", (Game game) =>
 ```
 
 Test in `gamestore.http`:
+
 ```
 ###
 POST http://localhost:5065/games
@@ -459,6 +484,7 @@ Content-Type: application/json
 ```
 
 It should respond:
+
 ```
 HTTP/1.1 201 Created
 Connection: close
@@ -484,6 +510,7 @@ I can then use that `Location` to get that newly created resource, very convenie
 One-liner: `new { name = value }` creates a temporary, nameless object with named properties, without needing a class.
 
 Key points:
+
 - This is creating an object, not destructuring one. Destructuring takes things apart; this puts things together.
 - The property names you write (like `id`) must match the route parameter names in the URL template.
 - Anonymous objects are read-only. You cannot change their properties after creation.
@@ -491,6 +518,7 @@ Key points:
 - Re`sults.CreatedAtRoute` needs to know which route parameters to fill in when building the URL. In this case, the named route expects an `id` parameter, so you pass `new { id = game.Id }` to say "use this game's ID as the `id` in the URL".
 
 Why not just pass game.Id directly?
+
 - Because `CreatedAtRoute` accepts an `object` and uses reflection to read its properties by name. It matches property names to route parameter names. Passing a plain `Guid` has no property names, so it would not know how to map it.
 
 ```csharp
@@ -506,6 +534,7 @@ Results.CreatedAtRoute(
 ### Adding Server-Side Validation
 
 If I only sent this at POST:
+
 ```
 ###
 POST http://localhost:5065/games
@@ -519,6 +548,7 @@ Content-Type: application/json
 ```
 
 It will print this as the body is missing the `name` property:
+
 ```
 HTTP/1.1 400 Bad Request
 Connection: close
@@ -533,6 +563,7 @@ Microsoft.AspNetCore.Http.BadHttpRequestException: Failed to read parameter "Gam
 This is as expected but the response is not ideal.
 
 Then, if I sent this which makes the `name` property as an empty string:
+
 ```
 ###
 POST http://localhost:5065/games
@@ -547,6 +578,7 @@ Content-Type: application/json
 ```
 
 It prints this which is bad as it's still giving us `201`:
+
 ```
 HTTP/1.1 201 Created
 Connection: close
@@ -568,6 +600,7 @@ Transfer-Encoding: chunked
 #### First fix
 
 In `Program.cs` I can do this:
+
 ```csharp
 // POST /games
 app.MapPost("/games", (Game game) =>
@@ -576,7 +609,7 @@ app.MapPost("/games", (Game game) =>
     {
         return Results.BadRequest("Game name is required.");
     }
-    
+
     game.Id = Guid.NewGuid();
     games.Add(game);
     return Results.CreatedAtRoute(
@@ -589,6 +622,7 @@ app.MapPost("/games", (Game game) =>
 ```
 
 This give me:
+
 ```
 HTTP/1.1 400 Bad Request
 Connection: close
@@ -605,6 +639,7 @@ But this means I will need to validate each property of the sent object myself.
 #### Use Data Annotation in `Game.cs` instead
 
 Add `[Required]`:
+
 ```csharp
 using System.ComponentModel.DataAnnotations;
 
@@ -627,6 +662,7 @@ public class Game
 So no object with an empty `Name` can come into my API.
 
 But this is not enough as it's still printing:
+
 ```
 HTTP/1.1 201 Created
 Connection: close
@@ -648,10 +684,12 @@ Transfer-Encoding: chunked
 Turns out - I'm using minimal Web API and it doesn't have much under the hood so it won't enforce the data annotations.
 
 I need to one extra thing called `endpoint filter`.
+
 - This endpoint filter mechanism will help enforce those data annotations before letting the request get into my endpoints.
 - I can use a library so I don't need to write this endpoint filter manually. It's on NuGet [here](https://nuget.org/).
 
 Search `minimalapis.extensions`. Find `MinimalApis.Extensions`. Install by:
+
 ```
 dotnet add package MinimalApis.Extensions --version 0.11.0
 ```
@@ -659,6 +697,7 @@ dotnet add package MinimalApis.Extensions --version 0.11.0
 Make sure the terminal is at `GameStore.Api` which is where the `.csproj` file is at.
 
 In terminal:
+
 ```bash
 Backend/src/GameStore.Api (main)
 $ dotnet add package MinimalApis.Extensions --version 0.11.0
@@ -669,6 +708,7 @@ info : X.509 certificate chain validation will use the default trust store selec
 ```
 
 Then, double check in `.csproj` to see this newly added package reference:
+
 ```
  <ItemGroup>
     <PackageReference Include="MinimalApis.Extensions" Version="0.11.0" />
@@ -676,6 +716,7 @@ Then, double check in `.csproj` to see this newly added package reference:
 ```
 
 So now I can add this `WithParameterValidation`, so that the data annotations in the data model `Game.cs` will be checked before allowing any requests to actually jump into my endpoints:
+
 ```csharp
 // POST /games
 app.MapPost("/games", (Game game) =>
@@ -692,6 +733,7 @@ app.MapPost("/games", (Game game) =>
 ```
 
 Now, test the endpoint again:
+
 ```
 ###
 POST http://localhost:5065/games
@@ -706,6 +748,7 @@ Content-Type: application/json
 ```
 
 It will print this well-formed problem json object instead of just exception trace:
+
 ```
 HTTP/1.1 400 Bad Request
 Connection: close
@@ -729,6 +772,7 @@ Transfer-Encoding: chunked
 ### Implementing the PUT endpoint
 
 I can start writing the PUT method like the below - it's convention to let the PUT method return `204 No Content`:
+
 ```csharp
 // PUT /games/{id}
 app.MapPut("/games/{id}", (Guid id, Game updatedGame) =>
@@ -750,6 +794,7 @@ app.MapPut("/games/{id}", (Guid id, Game updatedGame) =>
 ```
 
 Test the PUT endpoint:
+
 ```
 ###
 PUT http://localhost:5065/games/ff9f5f37-b80e-49ce-b484-f5154dcaabc4
@@ -764,6 +809,7 @@ Content-Type: application/json
 ```
 
 It prints this as expected:
+
 ```
 HTTP/1.1 204 No Content
 Connection: close
@@ -775,6 +821,7 @@ Server: Kestrel
 It works for now.
 
 However, this is not thread safe in production where there will be multiple requests into my API i.e. updating the same record at the same time:
+
 ```csharp
     existingGame.Name = updatedGame.Name;
     existingGame.Genre = updatedGame.Genre;
@@ -783,6 +830,7 @@ However, this is not thread safe in production where there will be multiple requ
 ```
 
 I can use `ConcurrentBag` to replace the in-memory list `List` in the `Program.cs`:
+
 ```csharp
 ConcurrentBag<Game> games = [
     new Game
@@ -815,6 +863,7 @@ ConcurrentBag<Game> games = [
 But that's just a note to know. I'm still using `List` for now.
 
 Also, test the PUT method wiht a non-existing id, and it prints this as expected:
+
 ```
 HTTP/1.1 404 Not Found
 Content-Length: 0
@@ -826,6 +875,7 @@ Server: Kestrel
 ### Implementing the DELETE endpoint
 
 Add this in `Program.cs`:
+
 ```csharp
 // DELETE /games/{id}
 app.MapDelete("/games/{id}", (Guid id) =>
@@ -836,12 +886,14 @@ app.MapDelete("/games/{id}", (Guid id) =>
 ```
 
 Test by deleting the Minecraft game:
+
 ```
 ###
 DELETE http://localhost:5065/games/583a7003-1113-4877-8a68-24f15ea233df
 ```
 
 It prints this as expected:
+
 ```
 HTTP/1.1 204 No Content
 Connection: close
@@ -851,6 +903,7 @@ Server: Kestrel
 ```
 
 Also, double check with the Get All request that the Minecraft game was gone:
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -889,14 +942,16 @@ Transfer-Encoding: chunked
 #### Which statement best reflects the relationship between APIs and REST?
 
 ##### Answer
+
 An API provides a set of functions to clients, and REST imposes conditions on how these functions should be presented and interacted with.
 
 ##### Explain
-An API (Application Programming Interface) is a set of definitions and protocols for building and integrating application software. It defines the methods and data formats for communicating with the service from an application. 
 
-REST (Representational State Transfer), on the other hand, is an architectural style that defines a set of constraints for creating Web services. RESTful services enable interacting parties to communicate over the Web using the standard HTTP protocol. 
+An API (Application Programming Interface) is a set of definitions and protocols for building and integrating application software. It defines the methods and data formats for communicating with the service from an application.
 
-The principles of REST guide the design of the architecture for APIs, focusing on stateless communication, resource-based URLs, and the use of HTTP methods to perform operations. 
+REST (Representational State Transfer), on the other hand, is an architectural style that defines a set of constraints for creating Web services. RESTful services enable interacting parties to communicate over the Web using the standard HTTP protocol.
+
+The principles of REST guide the design of the architecture for APIs, focusing on stateless communication, resource-based URLs, and the use of HTTP methods to perform operations.
 
 ##### Analogy
 
@@ -917,10 +972,10 @@ A REST API simply means an API that follows those REST rules.
 ##### The core REST rules using the restaurant analogy
 
 1. Stateless (The waiter has amnesia)
-Every time you call the waiter, they have no memory of your last visit or even your last order. Each request must include all the information needed. You can't say "the same as before." You must always give the full order.
+   Every time you call the waiter, they have no memory of your last visit or even your last order. Each request must include all the information needed. You can't say "the same as before." You must always give the full order.
 
 2. Resource based URLs (Everything on the menu has a name)
-Every "thing" in the system has its own address. For example:
+   Every "thing" in the system has its own address. For example:
 
 `/customers/42` is customer number 42
 `/orders/99` is order number 99
@@ -928,7 +983,7 @@ Every "thing" in the system has its own address. For example:
 You don't say "go get that thing." You point to it by name.
 
 3. HTTP methods (The type of request you make)
-Instead of saying everything in words, you use standard actions:
+   Instead of saying everything in words, you use standard actions:
 
 - GET = "Can I see the menu?" (read something)
 - POST = "I'd like to order something new" (create something)
@@ -937,13 +992,13 @@ Instead of saying everything in words, you use standard actions:
 - DELETE = "Cancel my order" (remove something)
 
 4. Uniform interface (Every waiter works the same way)
-No matter which waiter serves you, they all follow the same process. This makes the system predictable and easy to work with.
+   No matter which waiter serves you, they all follow the same process. This makes the system predictable and easy to work with.
 
 5. Client and server are separate (You and the kitchen don't need to know each other)
-You only talk to the waiter. You don't need to know how the kitchen works. The kitchen doesn't need to know who you are. They just handle orders and send food out.
+   You only talk to the waiter. You don't need to know how the kitchen works. The kitchen doesn't need to know who you are. They just handle orders and send food out.
 
 6. Cacheable (Popular orders are remembered at the counter)
-If 100 people order the same thing, the kitchen doesn't need to cook it fresh 100 times. The result can be stored temporarily and reused. This makes things faster.
+   If 100 people order the same thing, the kitchen doesn't need to cook it fresh 100 times. The result can be stored temporarily and reused. This makes things faster.
 
 ## Using Data Transfer Objects
 
@@ -954,15 +1009,17 @@ Create a new data model class for `Genre`.
 In `Program.cs` create a in-memory list of Genres but hardcoding the Guid.
 
 By doing this in PowerShell:
+
 ```
 PS C:\Projects\Video-Game-Store-Pro> [guid]::NewGuid()
 
-Guid                                
-----                                
+Guid
+----
 d8a77400-e414-4e5a-a695-c3ec90ce6177
 ```
 
 Then paste the generated Guid into the list now:
+
 ```csharp
 List<Genre> genres = [
     new Genre { Id = new Guid("d8a77400-e414-4e5a-a695-c3ec90ce6177"), Name = "Fighting" },
@@ -973,11 +1030,13 @@ List<Genre> genres = [
 ```
 
 Test it in the `gamestore.http`:
+
 ```
 GET http://localhost:5065/games
 ```
 
 I can see genre is returning both id and name, but what if for my future home catalog page that I only need the name, not the id?
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -1005,6 +1064,7 @@ Transfer-Encoding: chunked
 I also don't necessarily need the description of the games as what if I need to list hundres of games then that will be too much.
 
 I will also need to fix what objects to POST:
+
 ```
 ###
 POST http://localhost:5065/games
@@ -1031,6 +1091,7 @@ Always return a specific shape of data to the client.
 ### Using DTOs with GET requests
 
 In `Program.cs`, the get specific game currently looks like this:
+
 ```csharp
 // GET /games/{id}
 app.MapGet("games/{id}", (Guid id) =>
@@ -1042,6 +1103,7 @@ app.MapGet("games/{id}", (Guid id) =>
 ```
 
 Create a `Record` type for this DTO:
+
 ```csharp
 public record GameDetailsDto(
     Guid Id,
@@ -1056,6 +1118,7 @@ public record GameDetailsDto(
 Records are immutable - once it's created, it cannot be changed anymore. It makes our life easier when setting the properties too, like we can use one line instead of setting up any constructors, or getters, or setters like `Class`.
 
 Then, replace the returned `game` in `GET /games/{id}` endpoint:
+
 ```csharp
 // GET /games/{id}
 app.MapGet("games/{id}", (Guid id) =>
@@ -1076,6 +1139,7 @@ app.MapGet("games/{id}", (Guid id) =>
 ```
 
 Then, all update the `GET /games` endpoint - basically change each `game` in this `games` list into the `GameSummaryDto`:
+
 ```csharp
 // Old: GET /games
 app.MapGet("/games", () => games);
@@ -1101,6 +1165,7 @@ public record GameSummaryDto(
 Then, test it and I should see the `genre` property is returning a string, regardless now it's been changed to a composite property as client doesn't need to know how we store things internally.
 
 Then, add a new endpoint to get all genres:
+
 ```csharp
 // GET /genres
 app.MapGet("/genres", () => genres.Select(
@@ -1111,6 +1176,7 @@ public record GenreDto(Guid Id, string Name);
 ```
 
 Test it and it prints as expected:
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -1152,6 +1218,7 @@ Then, add association to the Genre - make sure the Genre exists in our database 
 But when responding back to client, we use `GameDetailsDto`.
 
 Changes:
+
 ```csharp
 // Old: POST /games
 app.MapPost("/games", (Game game) =>
@@ -1204,6 +1271,7 @@ app.MapPost("/games", (CreateGameDto gameDto) =>
 ```
 
 Test it - take an existing GenreId and paste it into the POST endpoint:
+
 ```
 Old:
 ###
@@ -1232,6 +1300,7 @@ Content-Type: application/json
 ```
 
 It prints this as expected:
+
 ```
 HTTP/1.1 201 Created
 Connection: close
@@ -1252,6 +1321,7 @@ Transfer-Encoding: chunked
 ```
 
 And the get all endpoints will return a list with this new game - note that it won't return the description info:
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -1279,11 +1349,12 @@ Transfer-Encoding: chunked
 ]
 ```
 
-### Using DTOs with PUT requests 
+### Using DTOs with PUT requests
 
 #### Test
 
 Before changing the first game it was like this in the Get All endpoint:
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -1305,6 +1376,7 @@ Transfer-Encoding: chunked
 ```
 
 Get a genre id that I have:
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -1323,6 +1395,7 @@ Transfer-Encoding: chunked
 ```
 
 Replace with the correct game id and genre id:
+
 ```
 Old:
 ###
@@ -1351,6 +1424,7 @@ Content-Type: application/json
 ```
 
 After running PUT endpoint, it shows updated successfully:
+
 ```
 HTTP/1.1 204 No Content
 Connection: close
@@ -1360,6 +1434,7 @@ Server: Kestrel
 ```
 
 Then, check again with get all endpoint again. I can see it's updated correctly with the correct genre and name:
+
 ```
 HTTP/1.1 200 OK
 Connection: close
@@ -1383,6 +1458,7 @@ Transfer-Encoding: chunked
 Finally, as we now we use DTO to define the inputs into our endpoints, I can remove those data annotations from my Models, just keep those rules on DTOs.
 
 Cleaned `Game` Models:
+
 ```csharp
 namespace GameStore.Api.Models;
 
@@ -1402,6 +1478,7 @@ public class Game
 ```
 
 Now just rely on the Dtos and the rules there. For example:
+
 ```csharp
 public record UpdateGameDto(
     [Required][StringLength(50)] string Name,
@@ -1416,22 +1493,205 @@ public record UpdateGameDto(
 
 #### In a REST API, what is the primary purpose of using a Data Transfer Object (DTO)?
 
-A Data Transfer Object (DTO) serves as a contract in a REST API by defining the expected structure and content of data exchanged between the client and the server. 
+A Data Transfer Object (DTO) serves as a contract in a REST API by defining the expected structure and content of data exchanged between the client and the server.
 
-This contract ensures consistency and compatibility, even if the underlying database models change. By using DTOs, the API can adapt to changes in database structure without breaking the client, as only the DTO structure (the "contract") remains consistent in client-server communication. 
+This contract ensures consistency and compatibility, even if the underlying database models change. By using DTOs, the API can adapt to changes in database structure without breaking the client, as only the DTO structure (the "contract") remains consistent in client-server communication.
 
 This approach helps maintain a stable interface for clients, enhancing the API’s reliability and flexibility.
 
 #### Why are record types preferred for defining DTOs in .NET applications?
 
-Record types in .NET are preferred for defining DTOs because they are immutable by default. Once their properties are set, usually at the time of creation, they cannot be changed. 
+Record types in .NET are preferred for defining DTOs because they are immutable by default. Once their properties are set, usually at the time of creation, they cannot be changed.
 
 This immutability is perfect for DTOs as they are meant to carry data from one point to another without the need for modification, ensuring data consistency and integrity as it moves across different layers of an application or between applications.
 
 #### When implementing a POST /games endpoint, why should a GameDetailsDto be returned in the 201 Created response instead of the Game model?
 
-Returning a GameDetailsDto in the response instead of the Game model helps prevent exposing the internal structure and potentially sensitive details of the Game object to the client. 
+Returning a GameDetailsDto in the response instead of the Game model helps prevent exposing the internal structure and potentially sensitive details of the Game object to the client.
 
 The DTO only includes the data necessary for the client, ensuring that implementation details or any fields that should remain private are not inadvertently exposed.
 
 ## Vertical Slice Architecture
+
+### Encapsulating the data
+
+Remember the temp data lists, games and genres in the `Program.cs`.
+
+Create `GameStoreData.cs` to move the endpoints from `Program.cs` to there.
+
+`genres` is now encapsulated in the `GameStoreData` class and it's `readonly`.
+
+```csharp
+public class GameStoreData
+{
+    private readonly List<Genre> genres = [
+      ...
+    ]
+}
+```
+
+Using `IEnumerable` to let the returned games be able to be iterated over, but not modified by insert, delete, etc.
+
+```csharp
+public IEnumerable<Game> GetGames() => games;
+
+// same as using block body:
+public IEnumerable<Game> GetGames() {
+  return games;
+}
+```
+
+#### Explanation - Field initialisation order in C#
+
+- `genres` is initialised inline (at the field declaration)
+
+```csharp
+private readonly List<Genre> genres = [ ... ]; // inline, no dependency
+```
+
+- `games` is initialised inside the constructor
+
+```csharp
+private readonly List<Game> games;  // declared only
+
+public GameStoreData()
+{
+    games = [ ... Genre = genres[0] ... ];   // assigned in constructor, after genres is ready
+}
+```
+
+This is because each Game object references `genres[0]`, `genres[3]`, etc. Those index lookups only work if `genres` is already populated. By the time the constructor body runs, the inline field `genres` is already ready, so it's safe to use.
+
+### Using the encapsulated data
+
+Start to replace the below in `Program.cs`.
+
+These are the same:
+```csharp
+GameStoreData data = new();
+
+// GameStoreData data = new GameStoreData();
+
+// GET /games
+app.MapGet("/games", () => data.GetGames().Select(game => new GameSummaryDto(
+    game.Id,
+    game.Name,
+    game.Genre.Name,
+    game.Price,
+    game.ReleaseDate
+)));
+```
+etc.
+
+#### Explanation - `.Select()` in LINQ
+
+`.Select()` is a LINQ method in C#. LINQ is a built-in set of tools for working with collections of data, like lists or arrays.
+
+Think of `.Select()` like a factory conveyor belt. You put items in one end, and each item gets transformed into something new at the other end. The original list stays the same. You get a new list of transformed items.
+
+In your code, `data.GetGenres()` returns a list of raw Genre objects from your data source. `.Select()` then loops over each one and converts it into a `GenreDto` object instead.
+
+```csharp
+// For each `genre` in the list, create a new GenreDto using its Id and Name.
+.Select(genre => new GenreDto(genre.Id, genre.Name))
+```
+
+A `Dto` stands for Data Transfer Object. It is a stripped-down version of your data model. You use it to control what gets sent back to the client. In this case, instead of sending the full `Genre` object (which might have extra fields you don't want to expose), you only send `Id` and `Name`.
+
+The `genre => new GenreDto(...)` part is a lambda. It is a small, inline function that says: "given one genre, do this thing."
+
+### Introduction to Vertical Slice Architecture
+
+To organise all the endpoints in `Program.cs` better, we're going to use this Vertical Slice Architecture.
+
+#### Structuring code the old way
+Layers:
+```
+Presentation Layer
+Business Logic Layer
+Data Access Layer
+Database
+```
+Create Game files per layer:
+```
+Presentation: CreateGameDto.cs (request), GameDetailsDto.cs (response), GamesController.cs
+Business Logic: Game.cs, GamesService.cs, IGamesRepository.cs
+Data Access: GamesRepository.cs
+```
+
+Note: "Too many things to change across too many places"
+
+#### Structuring code around slices
+
+- Codebase is divided into independent features (slices)
+- Each slice contains everything needed for a specific feature
+
+So, structuring a slice like this:
+```
+Input -> Handler -> Output
+(CreateGameDto -> CreateGameEndpoint -> GameDetailsDto)
+```
+
+### Adding the first vertical slice
+
+Create `Features/Games/GetGames` folder.
+
+Each feature is one folder. E.g. one for retrieving the full list of games.
+
+- `GetGamesDto`: this holds all the related DTOs of this feature.
+- `GetGamesEndpoint`: this holds all the related endpoints.
+
+
+#### Why making `GetGamesEndpoint` static
+
+Key points:
+
+- It is a language design rule, not a technical limitation.
+- A `static` class cannot be instantiated or inherited, so it is just a plain holder for methods.
+- It signals to other developers that the class has no state and no side effects.
+- The rule keeps extension methods easy to find and reason about.
+
+#### Why using `this IEndpointRouteBuilder app` in `public static void MapGetGames(this IEndpointRouteBuilder app, GameStoreData data)`
+
+First of all, when hovering over `MapGet()`, it shows this code hint:
+```
+(extension) RouteHandlerBuilder IEndpointRouteBuilder.MapGet
+```
+
+So `MapGet` is one of the extension methods from `IEndpointRouteBuilder`.
+
+`IEndpointRouteBuilder` is Microsoft's type. app is an object of that type. Microsoft did not give it a `MapGetGames` method.
+
+So the tutorial adds one:
+```csharp
+public static void MapGetGames(this IEndpointRouteBuilder app, GameStoreData data)
+```
+
+This says: "add `MapGetGames` to `IEndpointRouteBuilder`, even though we do not own that type."
+Now you can write:
+```csharp
+app.MapGetGames(data);
+```
+As if Microsoft put it there themselves.
+
+##### A simpler example
+
+Say you have a `string` and you want a method called `Shout` that adds exclamation marks.
+
+```csharp
+string name = "hello";
+name.Shout(); // you want this to work
+```
+
+`string` is Microsoft's class. You cannot add `Shout` to it. But with an extension method you can:
+```csharp
+public static class StringExtensions
+{
+    public static string Shout(this string text)
+    {
+        return text + "!!!";
+    }
+}
+```
+
+Now `name.Shout()` works. You did not touch Microsoft's `string` class at all.
