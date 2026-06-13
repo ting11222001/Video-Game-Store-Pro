@@ -2008,3 +2008,52 @@ public MyService(ILogger logger)
 - The logger dependency can be swapped out for a different implementation without modifying `MyService`.
 - It's easier to test `MyService` since the logger dependency can be mocked or stubbed.
 - Code is cleaner, easier to modify and easier to reuse.
+
+### Understanding service lifetimes
+
+#### When should instances be created?
+
+Your Web App receives HTTP Requests and has two services:
+- **MyService** (uses MyLogger)
+- **AnotherService** (uses MyLogger)
+
+The **IServiceProvider** is responsible for resolving, constructing, and injecting dependencies.
+
+**MyLogger** is registered with the **IServiceProvider**.
+
+When a service needs **MyLogger**, the IServiceProvider decides:
+- Create new MyLogger instance?
+- Reuse same MyLogger instance?
+
+#### The Transient Service Lifetime
+
+**MyLogger** is registered using `AddTransient<MyLogger>()`.
+
+The **IServiceProvider** resolves, constructs, and injects a **new MyLogger instance every time** it is requested:
+- **MyService** gets its own MyLogger instance (per HTTP Request)
+- The second HTTP Request gets another new MyLogger instance
+- **AnotherService** gets its own separate MyLogger instance
+
+> Transient lifetime services are created each time they are requested from the service container (IServiceProvider)
+
+#### The Scoped Service Lifetime
+
+**MyLogger** is registered using `AddScoped<MyLogger>()`.
+
+The **IServiceProvider** resolves, constructs, and injects **one MyLogger instance per HTTP Request**, shared within that request:
+- **HTTP Request 1:** Both **MyService** and **AnotherService** share the **same** MyLogger instance
+- **HTTP Request 2:** A **new** MyLogger instance is created and shared across services for that request
+
+> Scoped lifetime services are created once per HTTP request and reused within that request.
+
+#### The Singleton Service Lifetime
+
+**MyLogger** is registered using `AddSingleton<MyLogger>()`.
+
+The **IServiceProvider** resolves, constructs, and injects **one MyLogger instance for the entire application lifetime**:
+- **HTTP Request 1:** Both **MyService** and **AnotherService** share the **same** MyLogger instance
+- **HTTP Request 2:** Both services still use that **same** MyLogger instance
+
+> Singleton lifetime services are created the first time they are requested and reused across the application lifetime.
+
+### Using transient services
