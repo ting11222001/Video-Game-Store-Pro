@@ -2361,3 +2361,82 @@ Transfer-Encoding: chunked
 ```
 
 I can add breakpoints over `CreateGameEndpoint`, `GameDataLogger` and `GameStoreData` and hit F5 to see when they're being called after I click `Send Request` on POST and GET Games endpoints in `gamestore.http`.
+
+### Using singleton services
+
+So now make `GameStoreData` as the one and only instance across the entire lifetime of the application for every requests.
+```csharp
+// Program.cs
+builder.Services.AddTransient<GameDataLogger>();
+builder.Services.AddSingleton<GameStoreData>();
+```
+
+Test with the POST endpoint - the new game is created successfully:
+```bash
+info: GameStore.Api.Data.GameDataLogger[0]
+      Game Id: 37c12262-1d51-49eb-a4ae-ecc3ee75bf49 | Game Name: Street Fighter II
+info: GameStore.Api.Data.GameDataLogger[0]
+      Game Id: 83a09aa9-4f20-4632-8f34-ad556cb0db04 | Game Name: Final Fantasy XIV
+info: GameStore.Api.Data.GameDataLogger[0]
+      Game Id: e2814923-6741-4ef3-b497-ff1e2fc21669 | Game Name: FIFA 23
+info: GameStore.Api.Data.GameDataLogger[0]
+      Game Id: a3888e23-48a0-40a9-a872-5100b8140ab3 | Game Name: Minecraft
+
+HTTP/1.1 201 Created
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Mon, 15 Jun 2026 14:12:17 GMT
+Server: Kestrel
+Location: http://localhost:5065/games/a3888e23-48a0-40a9-a872-5100b8140ab3
+Transfer-Encoding: chunked
+
+{
+  "id": "a3888e23-48a0-40a9-a872-5100b8140ab3",
+  "name": "Minecraft",
+  "genreId": "4e179397-c3f1-45ec-a271-c26f07ff64f3",
+  "price": 19.99,
+  "releaseDate": "2011-11-18",
+  "description": "A sandbox game that allows players to build and explore virtual worlds made of blocks."
+}
+```
+
+And then test GET games endpoint - the GameStoreData is now having the new game i.e. it's not being reconstructed:
+```bash
+HTTP/1.1 200 OK
+Connection: close
+Content-Type: application/json; charset=utf-8
+Date: Mon, 15 Jun 2026 14:13:10 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+[
+  {
+    "id": "37c12262-1d51-49eb-a4ae-ecc3ee75bf49",
+    "name": "Street Fighter II",
+    "genre": "Fighting",
+    "price": 19.99,
+    "releaseDate": "1992-07-15"
+  },
+  {
+    "id": "83a09aa9-4f20-4632-8f34-ad556cb0db04",
+    "name": "Final Fantasy XIV",
+    "genre": "Roleplaying",
+    "price": 59.99,
+    "releaseDate": "2010-09-30"
+  },
+  {
+    "id": "e2814923-6741-4ef3-b497-ff1e2fc21669",
+    "name": "FIFA 23",
+    "genre": "Sports",
+    "price": 69.99,
+    "releaseDate": "2022-09-27"
+  },
+  {
+    "id": "a3888e23-48a0-40a9-a872-5100b8140ab3",
+    "name": "Minecraft",
+    "genre": "Fighting",
+    "price": 19.99,
+    "releaseDate": "2011-11-18"
+  }
+]
+```
