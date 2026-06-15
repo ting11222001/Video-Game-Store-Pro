@@ -2440,3 +2440,75 @@ Transfer-Encoding: chunked
   }
 ]
 ```
+
+#### Interesting thing to note
+
+I can technically write even though the newly created game will not show up in GET games endpoint:
+```csharp
+builder.Services.AddSingleton<GameDataLogger>(); // singleton can depend on a transient service
+builder.Services.AddTransient<GameStoreData>();
+```
+
+but not this because when a singleton is constructed, there is no scope, so I can't have a singleton obejct expecting to consume a scope service when there's no scope:
+```csharp
+builder.Services.AddSingleton<GameDataLogger>(); // singleton cannot depend on a scoped service
+builder.Services.AddScoped<GameStoreData>();
+```
+
+but I can do this:
+```csharp
+builder.Services.AddScoped<GameDataLogger>(); // scope can depend on a singleton service
+builder.Services.AddSingleton<GameStoreData>();
+```
+
+##### Singleton depending on Transient (works, but with a catch)
+
+A singleton is created once for the whole application. A transient service is created fresh every time it's requested.
+
+When `GameDataLogger` (singleton) asks for a `GameStoreData` (transient), .NET creates one instance of `GameStoreData` and gives it to `GameDataLogger`. `GameDataLogger` then holds onto that instance forever, because it's a singleton.
+
+The problem: every other part of your app that asks for `GameStoreData` normally gets a brand new copy. But `GameDataLogger` is stuck with the one copy it got at startup. So if `GameStoreData` holds an in-memory list of games, the copy inside `GameDataLogger` never sees new games added later. That's why a new game won't show up if you check it through `GameDataLogger`.
+
+It compiles and runs without errors, but it's a logic bug waiting to happen.
+
+##### Singleton depending on Scoped (throws an error)
+
+A scoped service is meant to live for one request (in a web app, one HTTP request gets one instance).
+
+A singleton is built once, when the app starts. At that point, there's no HTTP request happening yet. So there's no "scope" for the scoped service to belong to.
+
+.NET checks for this and throws an exception at runtime (or at startup if you enable validation), with a message like "Cannot consume scoped service from singleton". It refuses to let this happen because it would be unclear which request's data the singleton should be using.
+
+##### Scoped depending on Singleton (works fine)
+
+This is the safe direction. Each request creates a new `GameDataLogger` (scoped). When it asks for `GameStoreData` (singleton), it just gets the one shared instance that already exists.
+
+There's no timing problem here, the singleton already exists before any request starts, so it's always available.
+
+##### Simple rule to remember
+
+Think of lifetimes as having a "width": Singleton is widest (whole app lifetime), Scoped is medium (one request), Transient is narrowest (one usage).
+
+A service can safely depend on something with an equal or wider lifetime, but not a narrower one. Singleton → Scoped is "wide depending on narrow", which breaks. Scoped → Singleton is "narrow depending on wide", which is fine.
+
+### Knowledge check
+
+#### What is the main purpose of Dependency Injection (DI) in ASP.NET Core?
+
+Dependency Injection allows a class to rely on dependencies without managing their creation or configuration. Instead, dependencies are provided to the class, which simplifies code by removing the need for direct instantiation.
+
+#### In ASP.NET Core, which service lifetime should you use when you want an instance of a service to be created every time it is requested?
+
+n ASP.NET Core, the dependency injection container provides three different lifetimes for services:
+
+Singleton lifetime services are created the first time they are requested or when the application starts and then every subsequent request will use the same instance. If your application requires a singleton behavior, you would use this lifetime.
+
+Scoped lifetime services are created once per client request (connection). This is particularly useful for things like entity framework contexts that are meant to be used per operation or per request.
+
+Transient lifetime services are created each time they are requested from the service container. This lifetime works best for lightweight, stateless services because a new instance is provided to every controller and every service that requires it.
+
+Therefore, the correct answer is Transient because it ensures a new instance is created every time the service is requested.
+
+#### Why can't a scoped service be injected into a singleton in ASP.NET Core?
+
+Scoped services depend on the request lifecycle, which does not exist for singletons.
