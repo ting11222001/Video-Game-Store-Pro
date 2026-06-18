@@ -2512,3 +2512,41 @@ Therefore, the correct answer is Transient because it ensures a new instance is 
 #### Why can't a scoped service be injected into a singleton in ASP.NET Core?
 
 Scoped services depend on the request lifecycle, which does not exist for singletons.
+
+## Entity Framework and the Configuration System
+
+### Introduction to Entity Framework Core
+
+#### The Need For Object-Relational Mapping (O/RM)
+
+Problems:
+- Need to learn new language
+- Need a lot of additional data-access code
+- Error prone
+- Need to manually keep C# models in sync with DB tables
+
+Flow:
+1. Translate Web API request to SQL query
+2. Send SQL query to database server
+3. Read resulting database rows
+4. Translate database rows to Web API response
+
+#### What is Object-Relational Mapping (O/RM)?
+
+A technique for converting data between a relational database and an object-oriented program
+
+#### What is Entity Framework Core?
+
+A lightweight, extensible, open source and cross-platform object-relational mapper for .NET
+
+Benefits:
+- No need to learn a new language
+- Minimal data-access code (LINQ)
+- Tooling to keep C# models in sync with DB tables
+- Change tracking
+
+Flow:
+1. REST API sends C# code to Entity Framework Core
+2. Entity Framework Core sends SQL statements to Database
+3. Database returns resulting data to Entity Framework Core
+4. Entity Framework Core returns resulting objects to REST API
