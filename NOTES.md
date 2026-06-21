@@ -2630,3 +2630,142 @@ existingGame.GenreId = genre.Id;
 ```
 
 ### Creating the DBContext
+
+EF Core doc: https://learn.microsoft.com/en-us/ef/
+
+
+Click `Supported database management systems`.
+
+Open NuGet Package - `Microsoft.EntityFrameworkCore.Sqlite`.
+
+Click `Version`.
+
+Select `8.0.10` (make it the same as the tutorial).
+
+Then, go inside `Backend/src/GameStore.Api` and run `dotnet add package Microsoft.EntityFrameworkCore.Sqlite --version 8.0.10`.
+
+Create `GameStoreContext` in `Backend/src/GameStore.Api/Data/GameStoreContext.cs`:
+```csharp
+public class GameStoreContext
+{
+    ...
+}
+```
+
+Then:
+- Add inheritance from `DbContext` of EF core
+- Use the primary constructor to pass `options` to the base class i.e. DbContext's `options` (which holds configuration like the connection string and which database provider to use, for example, SQL Server or SQLite)
+- Use `DbSet<T>` properties to represent each table. EF core will use the `DbSet<Game>` property to work out that a `Games` table should exist, based on the `Game` class
+
+```csharp
+using System;
+using GameStore.Api.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace GameStore.Api.Data;
+
+public class GameStoreContext(DbContextOptions<GameStoreContext> options): DbContext(options)
+{
+    public DbSet<Game> Games => Set<Game>();
+    public DbSet<Genre> Genres => Set<Genre>();
+}
+```
+
+#### `DbContext(options)` is calling the base class constructor
+
+DbContext is the base class your GameStoreContext inherits from (that's what the : DbContext part means). The (options) immediately after it is a primary constructor base call. 
+
+It says: "take the `options` parameter from my own primary constructor, and pass it straight to my base class's constructor."
+So this single line is doing two jobs:
+
+1. `class GameStoreContext(DbContextOptions<GameStoreContext> options)` declares the constructor parameter for GameStoreContext itself.
+2. `: DbContext(options)` forwards that same parameter to DbContext's constructor.
+
+`DbContext` itself needs those options to actually function (knowing the connection string, provider, etc). If you didn't forward options to the base class, DbContext would have nothing to configure itself with, and your GameStoreContext wouldn't know how to connect to anything.
+
+#### The simple idea - what DbContext is
+
+
+DbContext is the bridge between your C# code and your database, when you use Entity Framework Core (EF Core).
+
+Think of a library. You don't go into the back room and grab books off the shelves yourself. Instead, you talk to a librarian. You tell the librarian what you want, and they fetch it, add it, or remove it for you.
+
+DbContext is that librarian. Your database is the back room full of books (data). DbContext is the one class that knows how to talk to the database on your behalf, so your code never has to write raw SQL.
+
+##### What it actually does
+
+
+A DbContext class in a .NET 8 project usually does three things:
+
+1. Holds your tables as properties. Each table in your database is represented as a DbSet<T> property. For example, if you have a Students table, your DbContext might have a line like:
+
+```csharp
+public DbSet<Student> Students { get; set; }
+```
+
+2. Tracks changes. When you load a student, change their name, and save, DbContext remembers what changed so it can build the correct SQL update for you.
+
+3. Talks to the database. It opens the connection, runs the queries, and closes the connection when it's done.
+
+##### A small example
+
+```csharp
+public class SchoolContext : DbContext
+{
+    public DbSet<Student> Students { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+        => options.UseSqlServer("your-connection-string");
+}
+```
+
+Then in your code, you can do this instead of writing SQL:
+
+```csharp
+using var context = new SchoolContext();
+var students = context.Students.Where(s => s.Year == 12).ToList();
+```
+
+EF Core turns that line into the right SQL behind the scenes.
+
+##### How you can verify this yourself
+
+A good way to see it in action: turn on EF Core logging in your project (there's a setting for this in `appsettings.json` under `Logging`), then run a query like the one above. 
+
+You'll see the actual SQL that DbContext generated printed in your terminal. That's a solid way to build trust in what it's doing under the hood, rather than taking it on faith.
+
+
+#### "DbContext represents a session with the database"
+
+A session is short for "one conversation with the database, start to finish." You open a DbContext, do some work (read data, change it, save it), then dispose of it. That's one session.
+
+This matters because a DbContext is not meant to be kept around forever. In an ASP.NET Core web app, you typically get a new DbContext per web request. The request comes in, EF Core opens a session, does its job, and closes it. Next request gets a brand new one.
+
+#### "Entities"
+
+This is just a naming convention. Any class that maps to a database table is called an entity. So your `Student` class, mapped to a `Students` table, is an entity. The term exists to separate it from a plain C# class that has nothing to do with the database.
+
+#### "Unit of Work and Repository pattern combined"
+
+This is the part most worth slowing down on, since it's a common interview topic too.
+
+##### Repository pattern 
+
+It is about hiding the data access logic behind a simple interface, so the rest of your code doesn't need to know how data is fetched. For example, instead of writing a database query directly in your controller, you call something like `studentRepository.GetById(5)`. The "how" is hidden inside the repository.
+
+In EF Core, each `DbSet<Student>` already behaves like a small repository. It gives you methods like `.Add()`, `.Find()`, `.Where()` without you writing the queries by hand.
+
+##### Unit of Work pattern 
+
+It is about grouping several changes together, then saving them all at once, as a single transaction. So if you update a student's name and add a new enrolment, both changes go through together, or neither does.
+
+In EF Core, this is SaveChanges(). DbContext tracks every change you make (in memory), and only when you call SaveChanges() does it send everything to the database in one batch.
+```csharp
+context.Students.Add(newStudent);          // tracked, not saved yet
+context.Students.Update(existingStudent);  // tracked, not saved yet
+context.SaveChanges();                     // both go to the database together
+```
+
+So the tutorial's claim is: DbContext gives you `DbSet<T>` properties (acting like repositories for each table), and a `SaveChanges()` method (acting like a unit of work that commits everything together). That's why people describe it as both patterns combined into one class.
+
+### Configuring the DBContext
