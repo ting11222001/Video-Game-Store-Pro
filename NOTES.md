@@ -2878,3 +2878,46 @@ public class GameStoreContext(DbContextOptions options)
     // ...
 }
 ```
+
+### Introduction to ASP.NET Core configuration
+
+Hard-code the connection string in `Program.cs` like this isn't a good idea:
+```csharp
+var connString = "Data Source=GameStore.db";
+```
+
+#### The ASP.NET Core Configuration System
+
+- Never store credentials in `appsettings.json`
+- Use **User Secrets** if your connection string includes secrets
+
+#### Configuration sources fed into `IConfiguration`:
+
+For example, there will be some configurations in `appsettings.json`:
+```json
+  "ConnectionStrings": {
+    "GameStore": "Data Source=..."
+  }
+```
+
+Also these other ones:
+- Command Line Args
+- Environment Variables
+- User Secrets
+- Cloud Sources
+
+All sources → `IConfiguration` → Connection string → REST API → Database
+
+##### User Secrets and ASP.NET Secret Manager
+For User Secrets, never store credentials in `appsettings.json` and use `User Secrets` if your connection string includes credentials.
+
+User Secrets is a local dev tool. It's enabled by the Secret Manager. The Secret Manager stores secrets in a separate file on your machine, outside your project folder. This means they won't get committed to Git by accident. You access it via the dotnet user-secrets command. It only works in the Development environment.
+
+##### Cloud Sources (e.g. Azure Key Vault)
+Azure Key Vault is a cloud service that stores secrets (like passwords and connection strings) securely. Instead of putting secrets in a file, your app fetches them from Key Vault at startup. AWS has an equivalent called AWS Secrets Manager, which you might already know. For this tutorial, you don't need it yet.
+
+##### IConfiguration and the REST API
+
+Yes, that's right. At startup, .NET collects all the configuration sources and merges them into one IConfiguration object. Your REST API code just reads from that object. It doesn't care whether the value came from a file, an environment variable, or Key Vault. This keeps your app code clean and flexible.
+
+#### Using ASP.NET Core configuration 
