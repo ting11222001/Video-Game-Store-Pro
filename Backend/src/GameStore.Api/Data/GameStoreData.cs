@@ -32,6 +32,7 @@ public class GameStoreData
                 Id = Guid.NewGuid(),
                 Name = "Final Fantasy XIV",
                 Genre = genres[3],
+                GenreId = genres[3].Id,
                 Price = 59.99m,
                 ReleaseDate = new DateOnly(2010, 9, 30),
                 Description = "Join over 27 million adventurers worldwide and take part in an epic and ever-changing FINAL FANTASY. Experience an unforgettable story, exhilarating battles, and a myriad of captivating environments to explore." },
@@ -39,6 +40,7 @@ public class GameStoreData
                 Id = Guid.NewGuid(),
                 Name = "FIFA 23",
                 Genre = genres[4],
+                GenreId = genres[4].Id,
                 Price = 69.99m,
                 ReleaseDate = new DateOnly(2022, 9, 27),
                 Description = "FIFA 23 brings The World's Game to the pitch, with HyperMotion2 Technology, men's and women's FIFA World Cup™, women's club teams, cross-play features, and more." }
