@@ -4045,3 +4045,24 @@ public static class DeleteGameEndpoint
     }
 }
 ```
+
+### Final queries and clean up
+
+Also refactor `GameStoreData` to `GameStoreContext` for the GET genres endpoint, and add `.AsNotTracking()` onto the returned entities, so it can get back to the client asap.
+
+```csharp
+// new
+public static class GetGenresEndpoint
+{
+    public static void MapGetGenres(this IEndpointRouteBuilder app)
+    {
+        app.MapGet("/", (GameStoreContext dbContext) => dbContext.Genres
+            .Select(genre => new GenreDto(genre.Id, genre.Name))
+            .AsNoTracking());
+    }
+}
+```
+
+#### Optional: delete `GameStoreData` and `GameDataLogger`.
+
+I currently decide to keep them. If I ever removed them, update `Program.cs` and run `dotnet: build` by `ctrl + shift + b` to check if it builds successfully. Remember to run this command in `Backend/src/GameStore.Api`.

@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// VERSION 1: DbContext
+// Register DbContext into a scoped lifetime
 var connString = builder.Configuration.GetConnectionString("GameStore");
 builder.Services.AddSqlite<GameStoreContext>(connString);
 
-// REGISTER SERVICES HERE
+// Optional services, added for practice (start)
 builder.Services.AddTransient<GameDataLogger>();
 builder.Services.AddSingleton<GameStoreData>();
+// Optional services, added for practice (end)
 
 var app = builder.Build();
 
