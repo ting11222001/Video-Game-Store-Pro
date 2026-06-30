@@ -4066,3 +4066,23 @@ public static class GetGenresEndpoint
 #### Optional: delete `GameStoreData` and `GameDataLogger`.
 
 I currently decide to keep them. If I ever removed them, update `Program.cs` and run `dotnet: build` by `ctrl + shift + b` to check if it builds successfully. Remember to run this command in `Backend/src/GameStore.Api`.
+
+### Knowledge check
+
+#### When using Entity Framework Core, why is it necessary to call SaveChanges after modifying an entity?
+
+EF Core tracks changes to entities but does not apply them to the database until SaveChanges is called.
+
+#### What is the primary purpose of the AsNoTracking() method in Entity Framework Core?
+
+To query entities without keeping them in the EF Core change tracker.
+
+#### In Entity Framework Core, what is the purpose of the ExecuteDelete method?
+
+The ExecuteDelete method in EF Core allows for a bulk deletion of records directly at the database level without loading each record into memory, which improves performance when deleting multiple records at once. 
+
+This method is particularly efficient for scenarios where you want to delete a filtered set of data in one call.
+
+Unlike other methods that require tracking entities, ExecuteDelete is designed to execute directly in the database, bypassing EF Core’s change tracker, making it an ideal choice for bulk deletions.
+
+## UI Integration
