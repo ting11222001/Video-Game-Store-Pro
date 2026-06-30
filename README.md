@@ -1,8 +1,10 @@
-# Video-Game-Store-Pro (.NET 8)
+# Video-Game-Store-Pro Backend (.NET 8)
 
 Building a ASP.NET Core (.NET 8) web application backend for a video game store in VS code.
 
-This is a more polished version of this project: [here](https://github.com/ting11222001/Video-Game-Store)
+The frontend of this project can be found [here](https://github.com/ting11222001/Video-Game-Store-Pro-NET-8-Frontend).
+
+This is a more polished version of this project: [here](https://github.com/ting11222001/Video-Game-Store).
 
 ## Table of Contents
 
@@ -33,24 +35,40 @@ Clone the repo.
 
 Check if the .NET SDK is installed:
 
-```
+```bash
 dotnet --list-sdks
 ```
 
-To run up the app, run up the backend:
+### Backend
 
+To build the backend .NET project:
+
+```bash
+cd Backend/src/GameStore.Api
+dotnet build
 ```
-cd GameStore.Api
+
+Then, run up the backend:
+
+```bash
+cd Backend/src/GameStore.Api
 dotnet run
 ```
 
-Make sure the local url of the backend is updated into frontend's `vite.config.ts`.
+### Frontend
+
+To build the frontend .NET project:
+
+```bash
+cd src/GameStore.Frontend
+dotnet build
+```
 
 Then, run up frontend:
 
-```
-cd GameStore.React
-npm run dev
+```bash
+cd src/GameStore.Frontend
+dotnet run
 ```
 
 ## Key Concepts
